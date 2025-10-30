@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Main colors - Professional retail system */
+    --background: 220 20% 97%;
+    --foreground: 220 15% 15%;
+
+    /* Cards with subtle shadow */
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+
+    /* Primary - Deep blue (trust, reliability) */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 217 91% 50%;
+
+    /* Secondary - Light blue gray */
+    --secondary: 220 15% 95%;
+    --secondary-foreground: 220 15% 25%;
+
+    /* Accent - Amber/Orange for actions */
+    --accent: 36 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 36 100% 45%;
+
+    /* Success - Green */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Amber */
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Muted - Subtle grays */
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Destructive - Red for waste/delete */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 220 15% 88%;
+    --input: 220 15% 90%;
+    --ring: 217 91% 60%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(36 100% 50%), hsl(36 100% 60%));
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+    /* Transitions */
+    --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Barcode Scanner Styles */
+body.barcode-scanner-active {
+  background: transparent !important;
+}
+
+body.barcode-scanner-active .app-content {
+  visibility: hidden;
+}
