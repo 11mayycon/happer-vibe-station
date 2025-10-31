@@ -12,7 +12,7 @@ import bgImage from '@/assets/posto-rodoil-bg.jpg';
 import logoImage from '@/assets/rodoil-logo.png';
 
 export default function Login() {
-  const [employeeData, setEmployeeData] = useState({ cpf: '', password: '' });
+  const [employeeData, setEmployeeData] = useState({ cpf: '' });
   const [adminData, setAdminData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -23,7 +23,8 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await login(employeeData.cpf, employeeData.password, false);
+    // Login de funcionário sem senha - usa CPF como senha também
+    const { error } = await login(employeeData.cpf, employeeData.cpf, false);
     
     if (error) {
       toast({
@@ -101,23 +102,7 @@ export default function Login() {
                     type="text"
                     placeholder="000.000.000-00"
                     value={employeeData.cpf}
-                    onChange={(e) => setEmployeeData({ ...employeeData, cpf: e.target.value })}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emp-password">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="emp-password"
-                    type="password"
-                    placeholder="••••••"
-                    value={employeeData.password}
-                    onChange={(e) => setEmployeeData({ ...employeeData, password: e.target.value })}
+                    onChange={(e) => setEmployeeData({ cpf: e.target.value })}
                     className="pl-10"
                     required
                   />

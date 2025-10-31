@@ -621,14 +621,14 @@ export default function PDV() {
               </p>
             </div>
 
-            {/* Ticket Médio */}
+            {/* Total da Venda Atual */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-purple-500/30">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Ticket Médio</span>
+                <span className="text-sm text-muted-foreground">Total da Venda</span>
                 <DollarSign className="w-5 h-5 text-purple-600" />
               </div>
               <p className="text-3xl font-bold text-purple-600">
-                R$ {shiftSummary.average.toFixed(2)}
+                R$ {calculateTotal().toFixed(2)}
               </p>
             </div>
           </div>

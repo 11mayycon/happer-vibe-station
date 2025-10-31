@@ -250,7 +250,7 @@ export default function Dashboard() {
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
+                    <h3 className="text-[22px] font-bold mb-2 text-black dark:text-white">{card.title}</h3>
                     <p className="text-muted-foreground">{card.description}</p>
                   </div>
                 </Card>
