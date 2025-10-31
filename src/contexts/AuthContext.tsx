@@ -66,12 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userData = users[0] as any;
 
-      // Importar bcrypt dinamicamente para validar a senha
-      const bcrypt = await import('bcryptjs');
-      const isValidPassword = await bcrypt.compare(password, userData.password_hash);
+      // Para admin, validar senha com bcrypt
+      // Para funcionário, login apenas com CPF (sem senha)
+      if (isAdmin) {
+        const bcrypt = await import('bcryptjs');
+        const isValidPassword = await bcrypt.compare(password, userData.password_hash);
 
-      if (!isValidPassword) {
-        return { error: 'Credenciais inválidas' };
+        if (!isValidPassword) {
+          return { error: 'Credenciais inválidas' };
+        }
+
+        // Verificar se o usuário é realmente admin
+        if (userData.role !== 'admin') {
+          return { error: 'Acesso não autorizado' };
+        }
       }
 
       const userInfo: User = {
