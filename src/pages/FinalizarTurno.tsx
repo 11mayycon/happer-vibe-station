@@ -211,78 +211,37 @@ export default function FinalizarTurno() {
 
       console.log('✅ [finalizeShift] Turno ativo removido');
 
-      // Enviar mensagem privada para o colaborador (comprovante de ponto) - sempre envia se tiver WhatsApp
+      // Enviar mensagem consolidada (ponto + vendas) para o colaborador
       console.log('📱 [finalizeShift] Verificando dados para envio...');
       console.log('📱 [finalizeShift] pontoData:', pontoData);
       console.log('📱 [finalizeShift] user.whatsapp_number:', user?.whatsapp_number);
 
-      if (pontoData && pontoData.length > 0 && pontoData[0].saida && user?.whatsapp_number) {
-        console.log('📱 [finalizeShift] Enviando comprovante de ponto...');
+      if (user?.whatsapp_number) {
+        console.log('📱 [finalizeShift] Enviando relatório consolidado (ponto + vendas)...');
         try {
-          const entrada = new Date(pontoData[0].entrada);
-          const saida = new Date(pontoData[0].saida);
-          const diffMs = saida.getTime() - entrada.getTime();
-          const diffMins = Math.floor(diffMs / 60000);
-          const hours = Math.floor(diffMins / 60);
-          const mins = diffMins % 60;
-          const totalHoras = `${hours}h ${mins}min`;
-
-          const comprovantePayload = {
-            whatsapp_number: user.whatsapp_number,
-            user_name: user.name,
-            clock_time: format(saida, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR }),
-            type: 'comprovante',
-            entrada: format(entrada, 'HH:mm:ss', { locale: ptBR }),
-            saida: format(saida, 'HH:mm:ss', { locale: ptBR }),
-            totalHoras: totalHoras,
-          };
-
-          console.log('📱 [finalizeShift] Payload comprovante:', JSON.stringify(comprovantePayload, null, 2));
-          console.log('📱 [finalizeShift] URL do Bot:', BOT_SERVER_URL);
-
-          const whatsappResponse = await fetch(`${BOT_SERVER_URL}/send-clock-notification`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(comprovantePayload),
-          });
-
-          const responseData = await whatsappResponse.json();
-          console.log('✅ [finalizeShift] Resposta comprovante:', whatsappResponse.status, responseData);
-        } catch (whatsappError) {
-          console.error('❌ [finalizeShift] Erro ao enviar comprovante de ponto:', whatsappError);
-        }
-      } else {
-        console.warn('⚠️ [finalizeShift] Condições não atendidas para envio de comprovante');
-        if (!pontoData || pontoData.length === 0) {
-          console.warn('  - Nenhum dado de ponto encontrado');
-        }
-        if (pontoData && pontoData.length > 0 && !pontoData[0].saida) {
-          console.warn('  - Ponto não tem saída registrada');
-        }
-        if (!user?.whatsapp_number) {
-          console.warn('  - Usuário não tem whatsapp_number');
-        }
-      }
-
-      // Se houver vendas, enviar relatório para o grupo
-      if (summary.totalSales > 0) {
-        console.log('📊 [finalizeShift] Enviando relatório de vendas para grupo...');
-        try {
+          // Enviar relatório de vendas (que agora inclui também o resumo de ponto)
           await sendReportToWhatsApp();
-          console.log('✅ [finalizeShift] Relatório enviado com sucesso');
+          console.log('✅ [finalizeShift] Relatório consolidado enviado com sucesso');
+
+          toast({
+            title: 'Turno finalizado!',
+            description: 'Relatório de turno e comprovante de ponto enviados ao seu WhatsApp. Você será deslogado em 3 segundos...',
+          });
         } catch (reportError) {
           console.error('❌ [finalizeShift] Erro ao enviar relatório:', reportError);
-          // Não bloquear o fluxo se o envio do relatório falhar
+
+          // Se falhar, notificar o erro
+          toast({
+            title: 'Turno finalizado!',
+            description: 'Turno finalizado, mas houve erro ao enviar relatório para WhatsApp. Você será deslogado em 3 segundos...',
+            variant: 'destructive',
+          });
         }
-        toast({
-          title: 'Turno finalizado!',
-          description: 'Relatório de vendas enviado ao grupo e comprovante de ponto enviado ao seu WhatsApp. Você será deslogado em 3 segundos...',
-        });
       } else {
-        // Sem vendas, apenas notifica
+        console.warn('⚠️ [finalizeShift] Usuário não tem whatsapp_number cadastrado');
         toast({
           title: 'Turno finalizado!',
-          description: 'Sem vendas no turno. Comprovante de ponto enviado ao seu WhatsApp. Você será deslogado em 3 segundos...',
+          description: 'Turno finalizado. Configure seu número de WhatsApp para receber relatórios. Você será deslogado em 3 segundos...',
         });
       }
 
@@ -356,7 +315,14 @@ export default function FinalizarTurno() {
 
       console.log('✅ PDF gerado com sucesso');
 
-      // Preparar payload para WhatsApp com PDF
+      // Calcular duração do turno
+      const duration = summary.endTime.getTime() - summary.startTime.getTime();
+      const durationMins = Math.floor(duration / 60000);
+      const hours = Math.floor(durationMins / 60);
+      const mins = durationMins % 60;
+      const shiftDuration = `${hours}h ${mins}min`;
+
+      // Preparar payload para WhatsApp com PDF (enviar no PV do funcionário)
       const whatsappPayload = {
         user: user?.name || 'Sistema',
         startTime: summary.startTime.toISOString(),
@@ -367,6 +333,8 @@ export default function FinalizarTurno() {
         paymentSummary: summary.paymentSummary,
         pdfData: pdfResponse, // Dados completos do PDF
         receiptNumber: receiptNumber,
+        whatsapp_number: user?.whatsapp_number, // Adicionar número de WhatsApp para envio no PV
+        shiftDuration: shiftDuration, // Adicionar duração do turno
       };
 
       console.log('📦 Enviando para WhatsApp...');
@@ -385,7 +353,7 @@ export default function FinalizarTurno() {
         console.log('✅ Resposta do WhatsApp:', responseData);
         toast({
           title: 'Relatório enviado!',
-          description: 'Relatório com PDF enviado ao WhatsApp com sucesso.',
+          description: 'Relatório com PDF enviado ao seu WhatsApp com sucesso.',
         });
 
         // Fechar dialog e limpar dados após sucesso

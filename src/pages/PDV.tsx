@@ -10,9 +10,10 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, Minus, Trash2, ShoppingCart, DollarSign, Printer, Clock, Camera } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, DollarSign, Printer, Clock, Camera, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
+import { startOfDay, endOfDay } from 'date-fns';
 
 interface Product {
   id: string;
@@ -37,30 +38,41 @@ export default function PDV() {
   const [loading, setLoading] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [amountReceived, setAmountReceived] = useState<string>('');
-  const [dailySummary, setDailySummary] = useState({ total: 0, count: 0, average: 0 });
+  const [shiftSummary, setShiftSummary] = useState({ total: 0, count: 0, average: 0 });
+  const [showSalesDialog, setShowSalesDialog] = useState(false);
+  const [salesItems, setSalesItems] = useState<any[]>([]);
+  const [loadingSalesItems, setLoadingSalesItems] = useState(false);
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Carregar resumo de vendas do dia
+  // Carregar resumo de vendas do turno
   useEffect(() => {
-    loadDailySummary();
-    const interval = setInterval(loadDailySummary, 30000); // Atualiza a cada 30 segundos
+    loadShiftSummary();
+    const interval = setInterval(loadShiftSummary, 30000); // Atualiza a cada 30 segundos
     return () => clearInterval(interval);
   }, [user]);
 
-  const loadDailySummary = async () => {
+  const loadShiftSummary = async () => {
     if (!user) return;
 
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Buscar vendas do dia atual (00:00 às 23:59)
+      const dayStart = startOfDay(new Date());
+      const dayEnd = endOfDay(new Date());
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('sales')
         .select('total')
-        .eq('user_id', user.id)
-        .gte('created_at', today.toISOString());
+        .gte('created_at', dayStart.toISOString())
+        .lte('created_at', dayEnd.toISOString());
+
+      // Se não for admin, filtrar apenas vendas do usuário
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -69,13 +81,87 @@ export default function PDV() {
         const count = data.length;
         const average = total / count;
 
-        setDailySummary({ total, count, average });
+        setShiftSummary({ total, count, average });
       } else {
-        setDailySummary({ total: 0, count: 0, average: 0 });
+        setShiftSummary({ total: 0, count: 0, average: 0 });
       }
     } catch (error) {
-      console.error('Error loading daily summary:', error);
+      console.error('Error loading shift summary:', error);
     }
+  };
+
+  const loadSalesItems = async () => {
+    if (!user) return;
+
+    setLoadingSalesItems(true);
+    try {
+      // Buscar vendas do dia atual
+      const dayStart = startOfDay(new Date());
+      const dayEnd = endOfDay(new Date());
+
+      let query = supabase
+        .from('sales')
+        .select('id')
+        .gte('created_at', dayStart.toISOString())
+        .lte('created_at', dayEnd.toISOString());
+
+      // Se não for admin, filtrar apenas vendas do usuário
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data: sales, error: salesError } = await query;
+
+      if (salesError) throw salesError;
+
+      if (sales && sales.length > 0) {
+        // Buscar itens de todas as vendas
+        const { data: items, error: itemsError } = await supabase
+          .from('sale_items')
+          .select('*')
+          .in('sale_id', sales.map(s => s.id));
+
+        if (itemsError) throw itemsError;
+
+        // Agrupar itens por produto e somar quantidades
+        const groupedItems = (items || []).reduce((acc: any[], item) => {
+          const existingItem = acc.find(i => i.nome_produto === item.nome_produto);
+          if (existingItem) {
+            existingItem.quantidade += item.quantidade;
+            existingItem.total += item.quantidade * item.preco_unitario;
+          } else {
+            acc.push({
+              nome_produto: item.nome_produto,
+              quantidade: item.quantidade,
+              preco_unitario: item.preco_unitario,
+              total: item.quantidade * item.preco_unitario,
+            });
+          }
+          return acc;
+        }, []);
+
+        // Ordenar por quantidade decrescente
+        groupedItems.sort((a, b) => b.quantidade - a.quantidade);
+
+        setSalesItems(groupedItems);
+      } else {
+        setSalesItems([]);
+      }
+    } catch (error) {
+      console.error('Error loading sales items:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Erro ao carregar itens vendidos',
+      });
+    } finally {
+      setLoadingSalesItems(false);
+    }
+  };
+
+  const handleTotalVendasClick = () => {
+    loadSalesItems();
+    setShowSalesDialog(true);
   };
 
   useEffect(() => {
@@ -403,7 +489,7 @@ export default function PDV() {
       setAmountReceived('');
 
       // Recarregar resumo de vendas
-      loadDailySummary();
+      loadShiftSummary();
       setGenerateReceipt(true);
     } catch (error: any) {
       console.error('Error finalizing sale:', error);
@@ -495,25 +581,32 @@ export default function PDV() {
 
   return (
     <Layout title="PDV - Ponto de Venda" showBack>
-      {/* Card de Resumo de Vendas do Dia */}
+      {/* Card de Resumo de Vendas do Turno */}
       <Card className="mb-6 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-500/20">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg p-3">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-xl font-bold">📈 Resumo de Vendas do Dia</h3>
+            <h3 className="text-xl font-bold">📈 Resumo de Vendas do Turno</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Valor Total Vendido */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-green-500/30">
+            {/* Valor Total Vendido - Clicável */}
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-green-500/30 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={handleTotalVendasClick}
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">Total Vendido</span>
                 <DollarSign className="w-5 h-5 text-green-600" />
               </div>
               <p className="text-3xl font-bold text-green-600">
-                R$ {dailySummary.total.toFixed(2)}
+                R$ {shiftSummary.total.toFixed(2)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                <FileText className="w-3 h-3" />
+                Clique para ver itens vendidos
               </p>
             </div>
 
@@ -524,7 +617,7 @@ export default function PDV() {
                 <ShoppingCart className="w-5 h-5 text-blue-600" />
               </div>
               <p className="text-3xl font-bold text-blue-600">
-                {dailySummary.count}
+                {shiftSummary.count}
               </p>
             </div>
 
@@ -535,7 +628,7 @@ export default function PDV() {
                 <DollarSign className="w-5 h-5 text-purple-600" />
               </div>
               <p className="text-3xl font-bold text-purple-600">
-                R$ {dailySummary.average.toFixed(2)}
+                R$ {shiftSummary.average.toFixed(2)}
               </p>
             </div>
           </div>
@@ -805,6 +898,83 @@ export default function PDV() {
         onClose={() => setShowScanner(false)}
         onScan={handleBarcodeScan}
       />
+
+      {/* Dialog de Itens Vendidos */}
+      <Dialog open={showSalesDialog} onOpenChange={setShowSalesDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Itens Vendidos Hoje</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {loadingSalesItems ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Carregando itens vendidos...</p>
+              </div>
+            ) : salesItems.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p>Nenhum item vendido hoje</p>
+              </div>
+            ) : (
+              <>
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total de Produtos Diferentes</p>
+                      <p className="text-2xl font-bold">{salesItems.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total de Itens Vendidos</p>
+                      <p className="text-2xl font-bold">
+                        {salesItems.reduce((sum, item) => sum + item.quantidade, 0)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {salesItems.map((item, index) => (
+                    <Card key={index} className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-medium">{item.nome_produto}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Quantidade: <span className="font-bold text-primary">{item.quantidade}</span> unidades
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Preço unitário: R$ {item.preco_unitario.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Total</p>
+                          <p className="text-xl font-bold text-primary">
+                            R$ {item.total.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-lg">Total Geral:</span>
+                    <span className="text-2xl font-bold text-primary">
+                      R$ {salesItems.reduce((sum, item) => sum + item.total, 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSalesDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

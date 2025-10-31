@@ -4,7 +4,7 @@ import https from 'https';
 import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
-import moment from 'moment';
+import moment from 'moment-timezone';
 import fs from 'fs';
 import path from 'path';
 import pdf from 'puppeteer';
@@ -17,8 +17,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Configurar moment para português
+// Configurar moment para português e timezone de São Paulo
 moment.locale('pt-br');
+moment.tz.setDefault('America/Sao_Paulo');
 
 // Configurar cliente com sessão persistente e reconexão
 const client = new Client({
@@ -150,56 +151,133 @@ const paymentMethodLabels = {
 app.post('/send-report', async (req, res) => {
   try {
     if (!isClientReady) {
-      return res.status(503).json({ 
-        success: false, 
-        error: 'Bot do WhatsApp não está conectado' 
+      return res.status(503).json({
+        success: false,
+        error: 'Bot do WhatsApp não está conectado'
       });
     }
 
-    const { 
-      user, 
-      startTime, 
-      endTime, 
-      totalSales, 
-      averageTicket, 
-      totalAmount, 
+    const {
+      user,
+      startTime,
+      endTime,
+      totalSales,
+      averageTicket,
+      totalAmount,
       paymentSummary,
       groupId,
       pdfData,
-      receiptNumber
+      receiptNumber,
+      whatsapp_number, // Número de WhatsApp do funcionário
+      shiftDuration // Duração do turno
     } = req.body;
 
-    // ID do grupo padrão (CAMINHO CERTO)
-    const targetGroupId = groupId || '120363407029045754@g.us';
+    // Se whatsapp_number for fornecido, enviar para o PV. Caso contrário, usar grupo
+    let targetId;
+    if (whatsapp_number) {
+      // Formatar número para o WhatsApp Web JS
+      let cleanNumber = whatsapp_number.replace(/\D/g, '');
 
-    const date = moment().format('DD/MM/YYYY');
-    const startTimeFormatted = moment(startTime).format('HH:mm');
-    const endTimeFormatted = moment(endTime).format('HH:mm');
+      // Se não começar com 55, adicionar
+      if (!cleanNumber.startsWith('55')) {
+        cleanNumber = '55' + cleanNumber;
+      }
 
-    // Montar mensagem conforme o padrão solicitado
-    let message = `📊 *Resumo de Turno - PDV InovaPro*\n\n`;
+      // Adicionar @c.us se não tiver
+      targetId = cleanNumber.includes('@') ? cleanNumber : `${cleanNumber}@c.us`;
+      console.log(`📱 Enviando relatório para PV: ${whatsapp_number} -> ${targetId}`);
+    } else {
+      // ID do grupo padrão (CAMINHO CERTO) - apenas se não houver número
+      targetId = groupId || '120363407029045754@g.us';
+      console.log(`📱 Enviando relatório para grupo: ${targetId}`);
+    }
+
+    const date = moment().tz('America/Sao_Paulo').format('DD/MM/YYYY');
+    const startTimeFormatted = moment(startTime).tz('America/Sao_Paulo').format('HH:mm');
+    const endTimeFormatted = moment(endTime).tz('America/Sao_Paulo').format('HH:mm');
+
+    // Montar mensagem consolidada (ponto + vendas)
+    let message = `📋 *Comprovante de Fechamento de Turno*\n\n`;
     message += `👤 *Funcionário:* ${user}\n`;
-    message += `🕐 *Turno:* ${startTimeFormatted} às ${endTimeFormatted}\n`;
+    message += `📅 *Data:* ${date}\n`;
+    message += `🕐 *Horário do Turno:* ${startTimeFormatted} às ${endTimeFormatted}\n`;
+    if (shiftDuration) {
+      message += `⏱️ *Duração:* ${shiftDuration}\n`;
+    }
+    message += `\n`;
+    message += `━━━━━━━━━━━━━━━━━━━\n`;
+    message += `📊 *RESUMO DE VENDAS*\n`;
+    message += `━━━━━━━━━━━━━━━━━━━\n\n`;
 
     if (totalSales === 0) {
       message += `💵 *Total de Vendas:* R$ 0,00\n`;
       message += `📄 *Status:* Nenhuma venda registrada neste turno.\n\n`;
     } else {
-      message += `💵 *Total de Vendas:* R$ ${parseFloat(totalAmount).toFixed(2)}\n`;
+      message += `💵 *Total Vendido:* R$ ${parseFloat(totalAmount).toFixed(2)}\n`;
       message += `📊 *Quantidade de Vendas:* ${totalSales}\n`;
       message += `📈 *Ticket Médio:* R$ ${parseFloat(averageTicket).toFixed(2)}\n\n`;
-      message += `💳 *Detalhamento por Forma de Pagamento:*\n`;
+      message += `💳 *Formas de Pagamento:*\n\n`;
 
-      // Adicionar formas de pagamento
+      // Agrupar por categoria
+      const debitoCategories = ['cartao_debito', 'visa_debito', 'elo_debito', 'maestro_debito'];
+      const creditoCategories = ['cartao_credito', 'visa_credito', 'elo_credito', 'mastercard_credito', 'amex_hipercard_credsystem'];
+
+      let hasDebito = false;
+      let hasCredito = false;
+      let debitoTotal = 0;
+      let creditoTotal = 0;
+      const outrosMetodos = [];
+
+      // Separar formas de pagamento
       Object.entries(paymentSummary || {}).forEach(([method, data]) => {
-        const methodLabel = paymentMethodLabels[method] || method;
-        message += `• ${methodLabel}: ${data.count}x — R$ ${parseFloat(data.amount).toFixed(2)}\n`;
+        if (debitoCategories.includes(method)) {
+          if (!hasDebito) {
+            message += `*🔵 DÉBITO:*\n`;
+            hasDebito = true;
+          }
+          const methodLabel = paymentMethodLabels[method] || method;
+          message += `  • ${methodLabel}: ${data.count}x — R$ ${parseFloat(data.amount).toFixed(2)}\n`;
+          debitoTotal += parseFloat(data.amount);
+        } else if (creditoCategories.includes(method)) {
+          if (!hasCredito) {
+            if (hasDebito) message += '\n';
+            message += `*🟢 CRÉDITO:*\n`;
+            hasCredito = true;
+          }
+          const methodLabel = paymentMethodLabels[method] || method;
+          message += `  • ${methodLabel}: ${data.count}x — R$ ${parseFloat(data.amount).toFixed(2)}\n`;
+          creditoTotal += parseFloat(data.amount);
+        } else {
+          outrosMetodos.push({ method, data });
+        }
       });
+
+      // Adicionar subtotais de débito e crédito
+      if (hasDebito) {
+        message += `  ──────────────────\n`;
+        message += `  *Subtotal Débito:* R$ ${debitoTotal.toFixed(2)}\n`;
+      }
+      if (hasCredito) {
+        message += `  ──────────────────\n`;
+        message += `  *Subtotal Crédito:* R$ ${creditoTotal.toFixed(2)}\n`;
+      }
+
+      // Adicionar outros métodos de pagamento (PIX, Dinheiro, etc)
+      if (outrosMetodos.length > 0) {
+        if (hasDebito || hasCredito) message += '\n';
+        message += `*🔶 OUTROS:*\n`;
+        outrosMetodos.forEach(({ method, data }) => {
+          const methodLabel = paymentMethodLabels[method] || method;
+          message += `  • ${methodLabel}: ${data.count}x — R$ ${parseFloat(data.amount).toFixed(2)}\n`;
+        });
+      }
       message += '\n';
     }
 
-    message += `🏢 *CNPJ:* 28.769.272/0001-70\n`;
+    message += `🏢 *Local:* Loja de Conveniência CT P. Rodoil\n`;
+    message += `💼 *CNPJ:* 28.769.272/0001-70\n`;
     message += `📍 *Registro INPI:* BR5120210029364\n\n`;
+    message += `💬 _Obrigado pelo seu trabalho!_\n\n`;
     message += `🤖 _Sistema PDV InovaPro - INOVAPRO TECHNOLOGY_`;
 
     // Se há dados de PDF, criar arquivo PDF real e enviar como anexo
@@ -243,8 +321,8 @@ app.post('/send-report', async (req, res) => {
         media.filename = fileName;
 
         // Enviar mensagem com anexo PDF
-        await client.sendMessage(targetGroupId, media, { caption: message });
-        console.log('✅ Relatório com PDF moderno enviado para o grupo do WhatsApp!');
+        await client.sendMessage(targetId, media, { caption: message });
+        console.log('✅ Relatório com PDF moderno enviado via WhatsApp!');
 
         // Limpar arquivo temporário após envio
         setTimeout(() => {
@@ -258,14 +336,14 @@ app.post('/send-report', async (req, res) => {
         console.error('❌ Erro ao processar PDF:', pdfError);
         console.log('📄 Enviando apenas mensagem de texto...');
         // Se falhar com PDF, enviar apenas a mensagem
-        await client.sendMessage(targetGroupId, message);
-        console.log('✅ Relatório (sem PDF) enviado para o grupo do WhatsApp!');
+        await client.sendMessage(targetId, message);
+        console.log('✅ Relatório (sem PDF) enviado via WhatsApp!');
       }
     } else {
       console.log('📄 Nenhum PDF fornecido, enviando apenas mensagem...');
       // Enviar apenas mensagem se não há PDF
-      await client.sendMessage(targetGroupId, message);
-      console.log('✅ Relatório enviado para o grupo do WhatsApp!');
+      await client.sendMessage(targetId, message);
+      console.log('✅ Relatório enviado via WhatsApp!');
     }
 
     res.json({ success: true, message: 'Relatório enviado com sucesso!' });
@@ -380,7 +458,7 @@ app.post('/send-clock-notification', async (req, res) => {
 app.get('/status', (req, res) => {
   res.json({
     connected: isClientReady,
-    timestamp: moment().format('DD/MM/YYYY HH:mm:ss')
+    timestamp: moment().tz('America/Sao_Paulo').format('DD/MM/YYYY HH:mm:ss')
   });
 });
 
@@ -417,7 +495,7 @@ app.get('/groups', async (req, res) => {
 async function generateModernPDF(reportText, receiptNumber, paymentSummary) {
   let browser;
   try {
-    const now = moment();
+    const now = moment().tz('America/Sao_Paulo');
     
     // Template HTML moderno para o PDF
     const htmlTemplate = `

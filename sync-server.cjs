@@ -658,15 +658,33 @@ app.post('/evolution/send-report', async (req, res) => {
       averageTicket,
       totalAmount,
       paymentSummary,
-      receiptNumber
+      receiptNumber,
+      whatsapp_number, // Número de WhatsApp do funcionário
+      shiftDuration // Duração do turno
     } = req.body;
 
-    // Número do grupo (pode ser configurado via env)
-    const targetNumber = '120363407029045754'; // ID do grupo CAMINHO CERTO
+    // Se whatsapp_number for fornecido, enviar para o PV. Caso contrário, usar grupo
+    let targetNumber;
+    if (whatsapp_number) {
+      // Formatar número para o WhatsApp
+      let cleanNumber = whatsapp_number.replace(/\D/g, '');
 
-    const date = new Date().toLocaleDateString('pt-BR');
-    const startTimeFormatted = new Date(startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const endTimeFormatted = new Date(endTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      // Se não começar com 55, adicionar
+      if (!cleanNumber.startsWith('55')) {
+        cleanNumber = '55' + cleanNumber;
+      }
+
+      targetNumber = cleanNumber;
+      await log(`📱 Enviando relatório para PV: ${whatsapp_number} -> ${targetNumber}`);
+    } else {
+      // Número do grupo (pode ser configurado via env) - apenas se não houver número
+      targetNumber = '120363407029045754'; // ID do grupo CAMINHO CERTO
+      await log(`📱 Enviando relatório para grupo: ${targetNumber}`);
+    }
+
+    const date = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const startTimeFormatted = new Date(startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+    const endTimeFormatted = new Date(endTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
 
     // Mapeamento de formas de pagamento
     const paymentMethodLabels = {
@@ -685,19 +703,27 @@ app.post('/evolution/send-report', async (req, res) => {
       'amex_hipercard_credsystem': 'Amex / Hipercard / Credsystem',
     };
 
-    // Montar mensagem
-    let message = `📊 *Resumo de Turno - PDV InovaPro*\n\n`;
+    // Montar mensagem consolidada (ponto + vendas)
+    let message = `📋 *Comprovante de Fechamento de Turno*\n\n`;
     message += `👤 *Funcionário:* ${user}\n`;
-    message += `🕐 *Turno:* ${startTimeFormatted} às ${endTimeFormatted}\n`;
+    message += `📅 *Data:* ${date}\n`;
+    message += `🕐 *Horário do Turno:* ${startTimeFormatted} às ${endTimeFormatted}\n`;
+    if (shiftDuration) {
+      message += `⏱️ *Duração:* ${shiftDuration}\n`;
+    }
+    message += `\n`;
+    message += `━━━━━━━━━━━━━━━━━━━\n`;
+    message += `📊 *RESUMO DE VENDAS*\n`;
+    message += `━━━━━━━━━━━━━━━━━━━\n\n`;
 
     if (totalSales === 0) {
       message += `💵 *Total de Vendas:* R$ 0,00\n`;
       message += `📄 *Status:* Nenhuma venda registrada neste turno.\n\n`;
     } else {
-      message += `💵 *Total de Vendas:* R$ ${parseFloat(totalAmount).toFixed(2)}\n`;
+      message += `💵 *Total Vendido:* R$ ${parseFloat(totalAmount).toFixed(2)}\n`;
       message += `📊 *Quantidade de Vendas:* ${totalSales}\n`;
       message += `📈 *Ticket Médio:* R$ ${parseFloat(averageTicket).toFixed(2)}\n\n`;
-      message += `💳 *Detalhamento por Forma de Pagamento:*\n`;
+      message += `💳 *Formas de Pagamento:*\n`;
 
       Object.entries(paymentSummary || {}).forEach(([method, data]) => {
         const methodLabel = paymentMethodLabels[method] || method;
@@ -706,8 +732,10 @@ app.post('/evolution/send-report', async (req, res) => {
       message += '\n';
     }
 
-    message += `🏢 *CNPJ:* 28.769.272/0001-70\n`;
+    message += `🏢 *Local:* Loja de Conveniência CT P. Rodoil\n`;
+    message += `💼 *CNPJ:* 28.769.272/0001-70\n`;
     message += `📍 *Registro INPI:* BR5120210029364\n\n`;
+    message += `💬 _Obrigado pelo seu trabalho!_\n\n`;
     message += `🤖 _Sistema PDV InovaPro - INOVAPRO TECHNOLOGY_`;
 
     // Enviar via Evolution API

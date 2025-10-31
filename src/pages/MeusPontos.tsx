@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, Download, Calendar } from 'lucide-react';
+import { Clock, Download, Calendar, MessageCircle, FileText } from 'lucide-react';
 import { format, differenceInMinutes, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+const BOT_SERVER_URL = import.meta.env.VITE_BOT_SERVER_URL || 'http://localhost:4000';
 
 interface PontoRecord {
   id: string;
@@ -19,6 +22,9 @@ interface PontoRecord {
 export default function MeusPontos() {
   const [pontos, setPontos] = useState<PontoRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedPonto, setSelectedPonto] = useState<PontoRecord | null>(null);
+  const [showPontoDialog, setShowPontoDialog] = useState(false);
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -128,6 +134,70 @@ export default function MeusPontos() {
     }
   };
 
+  const handlePontoClick = (ponto: PontoRecord) => {
+    setSelectedPonto(ponto);
+    setShowPontoDialog(true);
+  };
+
+  const sendPontoToWhatsApp = async () => {
+    if (!selectedPonto || !user?.whatsapp_number) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Número de WhatsApp não encontrado no seu perfil',
+      });
+      return;
+    }
+
+    setSendingWhatsApp(true);
+    try {
+      // Preparar mensagem do ponto
+      const dataFormatada = format(new Date(selectedPonto.entrada), 'dd/MM/yyyy', { locale: ptBR });
+      const entradaFormatada = format(new Date(selectedPonto.entrada), 'HH:mm:ss', { locale: ptBR });
+      const saidaFormatada = selectedPonto.saida
+        ? format(new Date(selectedPonto.saida), 'HH:mm:ss', { locale: ptBR })
+        : 'Em andamento';
+      const totalHoras = calculateDayHours(selectedPonto.entrada, selectedPonto.saida);
+
+      // Enviar notificação de ponto pelo bot do WhatsApp
+      const response = await fetch(`${BOT_SERVER_URL}/send-clock-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          whatsapp_number: user.whatsapp_number,
+          user_name: user.name,
+          clock_time: `${dataFormatada} às ${entradaFormatada}`,
+          type: 'comprovante',
+          entrada: entradaFormatada,
+          saida: saidaFormatada,
+          totalHoras: totalHoras,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao enviar mensagem');
+      }
+
+      toast({
+        title: 'Enviado com sucesso!',
+        description: 'Comprovante de ponto enviado para seu WhatsApp',
+      });
+
+      setShowPontoDialog(false);
+    } catch (error) {
+      console.error('Error sending to WhatsApp:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Erro ao enviar comprovante para WhatsApp',
+      });
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  };
+
   return (
     <Layout title="Meus Pontos e Horas Trabalhadas" showBack>
       <div className="space-y-6">
@@ -192,7 +262,11 @@ export default function MeusPontos() {
                   </thead>
                   <tbody>
                     {pontos.map((ponto) => (
-                      <tr key={ponto.id} className="border-b hover:bg-muted/30 transition-colors">
+                      <tr
+                        key={ponto.id}
+                        className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => handlePontoClick(ponto)}
+                      >
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-primary" />
@@ -247,6 +321,62 @@ export default function MeusPontos() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog de opções do ponto */}
+      <Dialog open={showPontoDialog} onOpenChange={setShowPontoDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Opções do Registro de Ponto</DialogTitle>
+          </DialogHeader>
+          {selectedPonto && (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <p className="text-sm">
+                  <strong>Data:</strong> {format(new Date(selectedPonto.entrada), 'dd/MM/yyyy', { locale: ptBR })}
+                </p>
+                <p className="text-sm">
+                  <strong>Entrada:</strong>{' '}
+                  <span className="text-green-600 font-bold">
+                    {format(new Date(selectedPonto.entrada), 'HH:mm:ss', { locale: ptBR })}
+                  </span>
+                </p>
+                <p className="text-sm">
+                  <strong>Saída:</strong>{' '}
+                  {selectedPonto.saida ? (
+                    <span className="text-red-600 font-bold">
+                      {format(new Date(selectedPonto.saida), 'HH:mm:ss', { locale: ptBR })}
+                    </span>
+                  ) : (
+                    <span className="text-yellow-600 font-bold">Em andamento</span>
+                  )}
+                </p>
+                <p className="text-sm">
+                  <strong>Total:</strong>{' '}
+                  <span className="text-primary font-bold">
+                    {calculateDayHours(selectedPonto.entrada, selectedPonto.saida)}
+                  </span>
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={sendPontoToWhatsApp}
+                  disabled={sendingWhatsApp}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  {sendingWhatsApp ? 'Enviando...' : 'Enviar Comprovante para WhatsApp'}
+                </Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPontoDialog(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

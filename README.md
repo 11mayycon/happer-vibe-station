@@ -1,6 +1,6 @@
-# 🏪 CAMINHO CERTO - Sistema de Gestão
+# 🏪 CAMINHO CERTO - Sistema de Gestão Inteligente
 
-Sistema completo de gestão de estoque, vendas e controle para postos de combustível e conveniências, desenvolvido com React, TypeScript e Supabase.
+Sistema completo de gestão de estoque, vendas, controle de ponto e automação via WhatsApp para postos de combustível e conveniências, desenvolvido com React, TypeScript, Supabase e integração WhatsApp.
 
 ## 📋 Índice
 
@@ -9,14 +9,35 @@ Sistema completo de gestão de estoque, vendas e controle para postos de combust
 - [Funcionalidades](#funcionalidades)
 - [Estrutura de Usuários](#estrutura-de-usuários)
 - [Módulos do Sistema](#módulos-do-sistema)
+- [Sistema de Controle de Ponto](#sistema-de-controle-de-ponto)
+- [Bot WhatsApp](#bot-whatsapp)
+- [Assistente WhatsApp (Evolution API)](#assistente-whatsapp-evolution-api)
 - [Integrações](#integrações)
 - [Banco de Dados](#banco-de-dados)
 - [Como Executar](#como-executar)
 - [Deploy](#deploy)
+- [Arquitetura do Sistema](#arquitetura-do-sistema)
+- [Fluxo Completo de Operação](#fluxo-completo-de-operação)
+- [Diferenciais do Sistema](#diferenciais-do-sistema)
+- [Manutenção e Monitoramento](#manutenção-e-monitoramento)
+- [Roadmap Futuro](#roadmap-futuro)
 
 ## 🎯 Sobre o Projeto
 
-O CAMINHO CERTO é um sistema web completo de gestão empresarial desenvolvido especificamente para postos de combustível e lojas de conveniência. O sistema oferece controle total sobre estoque, vendas, movimentações, desperdícios e gestão de equipe, com interface intuitiva e responsiva.
+O CAMINHO CERTO é um **sistema web completo de gestão empresarial inteligente** desenvolvido especificamente para postos de combustível e lojas de conveniência. O sistema oferece controle total sobre estoque, vendas, movimentações, desperdícios e gestão de equipe, com **automação via WhatsApp**, **controle de ponto digital**, **sincronização com sistemas externos** (Linx), e interface intuitiva e responsiva.
+
+### 🎯 O Que Torna o CAMINHO CERTO Único?
+
+Este não é apenas um sistema PDV tradicional. É uma **plataforma completa de automação empresarial** que:
+
+✨ **Elimina trabalho manual** - Notificações, relatórios e sincronizações são 100% automáticos
+🤖 **Comunica via WhatsApp** - Funcionários recebem comprovantes digitais instantaneamente
+📊 **Gera PDFs profissionais** - Relatórios modernos e organizados automaticamente
+🔄 **Sincroniza com outros sistemas** - Integração bidirecional com Linx e outros POS
+⏰ **Controla ponto digital** - Registro de entrada/saída com cálculo automático de horas
+💬 **Assistente inteligente** - Responde consultas de clientes 24/7 via WhatsApp
+📱 **Funciona offline** - PWA que opera mesmo sem internet
+🔐 **Segurança empresarial** - RLS, criptografia e logs de auditoria completos
 
 ## 🚀 Tecnologias
 
@@ -38,6 +59,22 @@ O CAMINHO CERTO é um sistema web completo de gestão empresarial desenvolvido e
   - Real-time subscriptions
   - Edge Functions
 - **Supabase Auth** - Sistema de autenticação
+- **Express 4.18** - Servidor HTTP para bot e sync
+- **Node.js 18+** - Runtime JavaScript
+
+### Automação & Integrações
+- **whatsapp-web.js 1.23** - Bot WhatsApp para relatórios
+- **Puppeteer 24.26** - Geração de PDFs e automação
+- **Evolution API** - Assistente inteligente WhatsApp
+- **Moment-timezone 0.5** - Gestão de datas (timezone São Paulo)
+- **QRCode Terminal** - Autenticação WhatsApp
+- **CORS** - Comunicação entre serviços
+- **Axios 1.6** - Cliente HTTP para APIs externas
+
+### Sincronização Externa
+- **Sistema Linx** - Integração com POS/ERP externo
+- **Sync Server** - Sincronização bidirecional de dados
+- **Webhook Support** - Recebimento de eventos externos
 
 ### PWA & Mobile
 - **Vite PWA Plugin** - Progressive Web App com Service Worker
@@ -70,6 +107,29 @@ O CAMINHO CERTO é um sistema web completo de gestão empresarial desenvolvido e
 - Cards de acesso rápido a funcionalidades
 - Design responsivo e intuitivo
 - Código de cores para identificação visual
+
+### ⏰ Controle de Ponto Automatizado
+- Registro digital de entrada/saída
+- Notificações automáticas via WhatsApp
+- Comprovantes digitais enviados ao funcionário
+- Cálculo automático de horas trabalhadas
+- Relatório de turno com resumo de vendas
+- PDF profissional anexado ao comprovante
+
+### 🤖 Automação WhatsApp
+- **Bot de Relatórios** - Envio automático de comprovantes e resumos
+- **Assistente Inteligente** - Respostas automáticas a consultas
+- **Notificações em Tempo Real** - Ponto, vendas e alertas
+- **PDFs Profissionais** - Relatórios formatados e organizados
+- **Multi-destinatário** - Envio para funcionário e grupo de gestão
+
+### 🔄 Sincronização Automática
+- Integração bidirecional com sistema Linx
+- Sincronização de vendas em tempo real
+- Atualização automática de produtos e preços
+- Fila de retry para garantir entrega
+- Logs completos de todas as operações
+- Tratamento inteligente de erros
 
 ## 👥 Estrutura de Usuários
 
@@ -287,6 +347,581 @@ Acesso operacional para:
 - Listagem completa da equipe
 - Controle de permissões
 
+## ⏰ Sistema de Controle de Ponto
+
+O CAMINHO CERTO possui um **sistema completo de controle de ponto** integrado ao WhatsApp para registro e notificação de entrada/saída de funcionários.
+
+### 📋 Funcionalidades do Controle de Ponto
+
+#### Registro de Entrada
+- **Registro automático** de horário de entrada do funcionário
+- **Notificação via WhatsApp** para o funcionário confirmando entrada
+- **Validação** para evitar múltiplas entradas no mesmo turno
+- **Armazenamento** na tabela `active_shifts` do Supabase
+- **Comprovante digital** enviado automaticamente
+
+#### Registro de Saída
+- **Finalização de turno** com cálculo automático de horas trabalhadas
+- **Resumo de vendas** do período do turno
+- **Relatório consolidado** (ponto + vendas) via WhatsApp
+- **PDF profissional** com detalhamento completo
+- **Envio para grupo** de gestão e **WhatsApp pessoal** do funcionário
+
+#### Dados Registrados
+```sql
+active_shifts:
+- user_id (UUID) - ID do funcionário
+- user_name (TEXT) - Nome completo
+- start_time (TIMESTAMP) - Horário de entrada
+- end_time (TIMESTAMP) - Horário de saída (quando finalizado)
+- whatsapp_number (TEXT) - Número para notificações
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+```
+
+### 📊 Relatório de Fechamento de Turno
+
+Ao finalizar o turno, o sistema gera automaticamente:
+
+1. **Comprovante de Ponto** com:
+   - Nome do funcionário
+   - Data e horários (entrada/saída)
+   - Duração total do turno
+   - Local de trabalho
+   - Dados da empresa (CNPJ, INPI)
+
+2. **Resumo de Vendas** incluindo:
+   - Total vendido no período
+   - Quantidade de vendas realizadas
+   - Ticket médio
+   - Detalhamento por forma de pagamento
+   - Relatório completo em PDF anexado
+
+3. **Envio Automático** para:
+   - WhatsApp pessoal do funcionário (comprovante individual)
+   - Grupo de gestão no WhatsApp (controle administrativo)
+
+### 🔔 Notificações WhatsApp do Ponto
+
+Todas as ações de ponto geram notificações automáticas:
+
+**Entrada no Turno:**
+```
+📋 Comprovante de Ponto - PDV InovaPro
+
+👤 Funcionário: [Nome]
+📅 Data: [DD/MM/YYYY]
+🕒 Horário: [HH:mm:ss]
+🏢 Local: Loja de Conveniência CT P. Rodoil
+📄 Tipo: Entrada no Turno
+
+💼 CNPJ: 28.769.272/0001-70
+📍 Registro INPI: BR5120210029364
+
+💬 Tenha um ótimo dia de trabalho!
+
+🤖 Sistema PDV InovaPro - INOVAPRO TECHNOLOGY
+```
+
+**Saída do Turno (com resumo):**
+- Mensagem formatada com dados do ponto
+- Resumo completo de vendas do período
+- PDF anexado com relatório detalhado
+- Enviado tanto para o funcionário quanto para gestão
+
+## 🤖 Bot WhatsApp
+
+O sistema inclui um **bot dedicado do WhatsApp** (`bot/server.js`) que gerencia toda a comunicação automatizada com funcionários e gestão.
+
+### 🚀 Tecnologias do Bot
+
+- **whatsapp-web.js 1.23** - Biblioteca oficial para integração WhatsApp
+- **Express 4.18** - Servidor HTTP para receber requisições
+- **Puppeteer 24.26** - Automação e geração de PDFs
+- **Moment-timezone 0.5** - Gerenciamento de datas/horários (timezone São Paulo)
+- **QRCode Terminal** - Autenticação via QR Code no terminal
+- **CORS** - Comunicação com o frontend React
+
+### ⚙️ Configuração e Funcionamento
+
+#### Autenticação e Sessão
+```javascript
+- Autenticação via QR Code (primeira vez)
+- Sessão persistente com LocalAuth
+- Reconexão automática em caso de queda
+- Até 5 tentativas de reconexão
+- Keepalive a cada 1 minuto
+- Session ID: 'caminho-certo-bot'
+```
+
+#### Servidor Express
+```
+Porta: 4000 (padrão) ou variável PORT
+Suporta HTTP e HTTPS (se certificados disponíveis)
+CORS habilitado para comunicação com frontend
+```
+
+### 📡 Endpoints da API do Bot
+
+#### `POST /send-report`
+Envia relatório completo de fechamento de turno
+
+**Payload:**
+```json
+{
+  "user": "Nome do Funcionário",
+  "startTime": "2025-10-31T08:00:00",
+  "endTime": "2025-10-31T17:00:00",
+  "totalSales": 15,
+  "totalAmount": 1250.50,
+  "averageTicket": 83.37,
+  "paymentSummary": {
+    "dinheiro": { "count": 5, "amount": 350.00 },
+    "pix": { "count": 10, "amount": 900.50 }
+  },
+  "whatsapp_number": "5511999999999",
+  "shiftDuration": "9h 0min",
+  "receiptNumber": "TURNO-20251031-001",
+  "pdfData": "..."
+}
+```
+
+**Resposta:**
+```json
+{
+  "success": true,
+  "message": "Relatório enviado com sucesso!"
+}
+```
+
+#### `POST /send-clock-notification`
+Envia notificação de entrada/saída de ponto
+
+**Payload:**
+```json
+{
+  "whatsapp_number": "5511999999999",
+  "user_name": "João Silva",
+  "clock_time": "31/10/2025 às 08:00:00",
+  "type": "entrada" // ou "saida" ou "comprovante"
+}
+```
+
+**Para tipo "comprovante":**
+```json
+{
+  "whatsapp_number": "5511999999999",
+  "user_name": "João Silva",
+  "clock_time": "31/10/2025 às 17:00:00",
+  "type": "comprovante",
+  "entrada": "08:00:00",
+  "saida": "17:00:00",
+  "totalHoras": "9h 0min"
+}
+```
+
+#### `GET /status`
+Verifica status de conexão do bot
+
+**Resposta:**
+```json
+{
+  "connected": true,
+  "timestamp": "31/10/2025 14:30:00"
+}
+```
+
+#### `GET /groups`
+Lista todos os grupos do WhatsApp conectado
+
+**Resposta:**
+```json
+{
+  "success": true,
+  "groups": [
+    {
+      "id": "120363407029045754@g.us",
+      "name": "CAMINHO CERTO",
+      "participantCount": 5
+    }
+  ]
+}
+```
+
+### 📄 Geração de PDF
+
+O bot gera **PDFs profissionais** usando Puppeteer com:
+
+- **Layout moderno** com gradientes e cores corporativas
+- **Tabelas organizadas** com dados de pagamento
+- **Informações da empresa** (CNPJ, endereço, INPI)
+- **Timestamp** e número do documento
+- **Formatação responsiva** em formato A4
+- **Headers de segurança** e compressão
+
+Exemplo de estrutura do PDF:
+```
+┌─────────────────────────────────────┐
+│   CENTRO AUTOMOTIVO CAMINHO CERTO   │
+│   RELATÓRIO DE FECHAMENTO DE TURNO  │
+├─────────────────────────────────────┤
+│ Dados da Empresa                    │
+│ Informações do Documento            │
+├─────────────────────────────────────┤
+│ RESUMO POR FORMA DE PAGAMENTO       │
+│ [Tabela detalhada]                  │
+├─────────────────────────────────────┤
+│ DETALHES DO FECHAMENTO              │
+│ [Texto do relatório]                │
+├─────────────────────────────────────┤
+│ Footer com timestamp                │
+└─────────────────────────────────────┘
+```
+
+### 🔄 Recuperação e Estabilidade
+
+O bot possui mecanismos robustos de recuperação:
+
+```javascript
+// Eventos monitorados
+- 'qr': Novo QR Code disponível
+- 'ready': Bot conectado com sucesso
+- 'authenticated': Autenticação bem-sucedida
+- 'auth_failure': Falha na autenticação
+- 'disconnected': Bot desconectado
+- 'loading_screen': Progresso de carregamento
+- 'change_state': Mudança de estado
+
+// Reconexão automática
+- Máximo de 5 tentativas
+- Delay de 5 segundos entre tentativas
+- Reset do contador ao obter QR ou conectar
+- Logs detalhados de cada tentativa
+
+// Graceful shutdown
+- SIGINT e SIGTERM capturados
+- Destruição limpa do cliente
+- Limpeza de recursos
+```
+
+### 📦 Instalação e Execução do Bot
+
+#### 1. Navegar para a pasta do bot
+```bash
+cd bot/
+```
+
+#### 2. Instalar dependências
+```bash
+npm install
+```
+
+#### 3. Configurar variáveis de ambiente (opcional)
+```bash
+# .env
+PORT=4000
+SSL_KEY_PATH=/caminho/para/chave.key
+SSL_CERT_PATH=/caminho/para/certificado.crt
+```
+
+#### 4. Iniciar o bot
+```bash
+npm start
+```
+
+#### 5. Escanear QR Code
+- Um QR Code será exibido no terminal
+- Abra o WhatsApp no celular
+- Vá em **Dispositivos Conectados**
+- Escaneie o QR Code exibido
+- A sessão será salva automaticamente
+
+#### 6. Verificar conexão
+```bash
+curl http://localhost:4000/status
+```
+
+### 🔐 Segurança do Bot
+
+- ✅ **Sessão criptografada** com LocalAuth
+- ✅ **Validação de números** antes do envio
+- ✅ **Rate limiting** natural do WhatsApp
+- ✅ **Logs detalhados** de todas as operações
+- ✅ **Graceful shutdown** para evitar corrupção
+- ✅ **HTTPS opcional** com certificados SSL
+- ✅ **Timeout de requisições** configurável
+- ✅ **Sandbox do Puppeteer** desabilitado para ambiente Docker
+
+### 🎯 Uso em Produção
+
+#### PM2 (Recomendado)
+```bash
+# Instalar PM2
+npm install -g pm2
+
+# Iniciar bot com PM2
+cd bot/
+pm2 start server.js --name whatsapp-bot
+
+# Configurar para iniciar automaticamente
+pm2 startup
+pm2 save
+
+# Monitorar logs
+pm2 logs whatsapp-bot
+
+# Reiniciar bot
+pm2 restart whatsapp-bot
+```
+
+#### Docker (Alternativo)
+```dockerfile
+FROM node:18-slim
+
+# Instalar dependências do Puppeteer
+RUN apt-get update && apt-get install -y \
+    chromium \
+    chromium-sandbox \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY bot/package*.json ./
+RUN npm install
+
+COPY bot/ .
+
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+CMD ["node", "server.js"]
+```
+
+### 📊 Monitoramento do Bot
+
+**Logs importantes:**
+```
+✅ Bot do Caminho Certo conectado ao WhatsApp!
+💾 Sessão salva localmente
+💚 Conexão ativa: CONNECTED
+📱 Enviando relatório para PV: 5511999999999
+✅ Relatório com PDF moderno enviado via WhatsApp!
+```
+
+**Logs de erro:**
+```
+❌ Bot desconectado: [motivo]
+🔄 Tentando reconectar (1/5)...
+⚠️ Por favor, escaneie o QR Code novamente
+```
+
+## 💬 Assistente WhatsApp (Evolution API)
+
+O sistema possui integração com **Evolution API** para criar um **assistente inteligente no WhatsApp** que responde automaticamente a consultas de funcionários e clientes.
+
+### 🌐 Configuração da Evolution API
+
+#### Dados de Conexão
+```javascript
+EVOLUTION_API_URL: 'https://evo.inovapro.cloud'
+EVOLUTION_API_KEY: 'BQYHJGJHJ'
+EVOLUTION_INSTANCE: 'pdv-inovapro'
+```
+
+### 🎯 Funcionalidades do Assistente
+
+O assistente WhatsApp responde automaticamente a:
+
+#### 📦 Consultas de Produtos
+```
+Usuário: "Quanto custa Coca-Cola 2L?"
+Assistente: "Coca-Cola 2L está R$ 7,50. Temos 48 unidades em estoque."
+```
+
+#### 📊 Informações de Vendas
+```
+Usuário: "Qual foi o total de vendas hoje?"
+Assistente: "Hoje foram R$ 1.850,00 em 25 vendas."
+```
+
+#### ⏰ Status do Ponto
+```
+Usuário: "Estou em turno?"
+Assistente: "Sim, seu turno iniciou às 08:00. Você está há 6h trabalhando."
+```
+
+#### ℹ️ Informações da Loja
+```
+Usuário: "Qual o horário de funcionamento?"
+Assistente: "Funcionamos de Segunda a Sábado, das 6h às 22h."
+```
+
+### 🔧 Servidor de Sincronização (sync-server.cjs)
+
+O `sync-server.cjs` é responsável por:
+
+1. **Sincronizar dados** entre Evolution API e Supabase
+2. **Processar mensagens** recebidas no WhatsApp
+3. **Responder automaticamente** com base em regras de negócio
+4. **Integrar com sistema Linx** (POS externo)
+5. **Manter logs** de todas as interações
+
+#### Endpoints do Servidor de Sincronização
+
+**Porta:** 5000 (padrão) ou variável `SYNC_PORT`
+
+```javascript
+// Estrutura básica
+const EVOLUTION_API_URL = 'https://evo.inovapro.cloud';
+const EVOLUTION_API_KEY = 'BQYHJGJHJ';
+const EVOLUTION_INSTANCE = 'pdv-inovapro';
+const LINX_IP = process.env.LINX_IP || '192.168.1.100';
+const LINX_PORT = process.env.LINX_PORT || '5050';
+```
+
+#### Tabelas de Sincronização
+
+O sistema cria automaticamente as tabelas:
+
+```sql
+-- Histórico de sincronizações
+CREATE TABLE sincronizacoes (
+  id UUID PRIMARY KEY,
+  tipo TEXT, -- 'venda_linx', 'venda_cc'
+  origem TEXT, -- 'linx', 'caminhocerto'
+  destino TEXT, -- 'caminhocerto', 'linx'
+  dados JSONB,
+  status TEXT, -- 'processado', 'erro'
+  erro TEXT,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+);
+
+-- Fila de sincronização pendente
+CREATE TABLE sincronizacao_pendente (
+  id UUID PRIMARY KEY,
+  tipo TEXT,
+  dados JSONB,
+  tentativas INTEGER DEFAULT 0,
+  proximo_retry TIMESTAMP,
+  created_at TIMESTAMP
+);
+```
+
+### 📱 Fluxo Completo de Comunicação WhatsApp
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SISTEMA CAMINHO CERTO                    │
+└─────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│   BOT WPP   │      │ EVOLUTION   │      │   SISTEMA   │
+│ (Reports)   │      │ (Assistant) │      │   LINX      │
+└─────────────┘      └─────────────┘      └─────────────┘
+        │                     │                     │
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│ Funcionário │      │   Clientes  │      │  Sync Data  │
+│   (Ponto)   │      │  (Dúvidas)  │      │   (Vendas)  │
+└─────────────┘      └─────────────┘      └─────────────┘
+```
+
+### 🔄 Processos Automatizados
+
+#### 1. Entrada no Turno
+```
+Funcionário → PDV → Supabase → Bot WhatsApp → Notificação
+```
+
+#### 2. Venda Realizada
+```
+PDV → Supabase → Sync Server → Linx
+                      ↓
+              Evolution API (disponível para consultas)
+```
+
+#### 3. Fechamento de Turno
+```
+Funcionário → PDV → Supabase → Gera Relatório → Bot WhatsApp
+                                                      ↓
+                                            Funcionário (PV)
+                                            Grupo Gestão
+```
+
+#### 4. Consulta de Cliente
+```
+Cliente → WhatsApp → Evolution API → Sync Server → Supabase
+                                                       ↓
+                                              Resposta Automática
+```
+
+### 🚀 Executar Sistema Completo
+
+#### Passo 1: Iniciar o Frontend (PDV)
+```bash
+npm run dev
+# Porta 8080
+```
+
+#### Passo 2: Iniciar o Bot WhatsApp
+```bash
+cd bot/
+npm start
+# Porta 4000
+# Escanear QR Code
+```
+
+#### Passo 3: Iniciar o Servidor de Sincronização
+```bash
+npm run sync-server
+# Porta 5000
+```
+
+#### Verificar que tudo está rodando:
+```bash
+# Frontend
+curl http://localhost:8080
+
+# Bot WhatsApp
+curl http://localhost:4000/status
+
+# Sync Server
+curl http://localhost:5000/health
+```
+
+### ⚙️ Variáveis de Ambiente Completas
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+# Supabase
+VITE_SUPABASE_URL=sua-url-supabase
+VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica
+
+# Bot WhatsApp
+PORT=4000
+SSL_KEY_PATH=/caminho/para/ssl.key
+SSL_CERT_PATH=/caminho/para/ssl.crt
+
+# Evolution API
+EVOLUTION_API_URL=https://evo.inovapro.cloud
+EVOLUTION_API_KEY=BQYHJGJHJ
+EVOLUTION_INSTANCE=pdv-inovapro
+
+# Sync Server
+SYNC_PORT=5000
+
+# Sistema Linx
+LINX_IP=192.168.1.100
+LINX_PORT=5050
+
+# Bot Server URL (para o frontend)
+VITE_BOT_SERVER_URL=http://localhost:4000
+```
+
 ## 🔗 Integrações
 
 ### Supabase Database
@@ -305,6 +940,136 @@ Acesso operacional para:
 - Estrutura preparada para autenticação via Supabase Auth
 - Atualmente usando autenticação customizada com tabela `users`
 - Possibilidade de migração futura para Auth nativo
+
+### 🔄 Integração com Sistema Linx
+
+O CAMINHO CERTO possui **sincronização bidirecional** com o sistema **Linx** (sistema POS/ERP externo) através do servidor de sincronização.
+
+#### Configuração da Integração
+```javascript
+LINX_IP: '192.168.1.100' (padrão)
+LINX_PORT: '5050' (padrão)
+LINX_URL: 'http://192.168.1.100:5050'
+```
+
+#### Funcionalidades da Sincronização
+
+**1. Sincronização de Vendas**
+- Vendas do Caminho Certo → Linx
+- Vendas do Linx → Caminho Certo
+- Atualização em tempo real
+- Fila de retry para falhas
+
+**2. Sincronização de Produtos**
+- Catálogo do Linx → Caminho Certo
+- Atualização de preços e estoque
+- Sincronização periódica
+
+**3. Logs e Auditoria**
+- Histórico completo na tabela `sincronizacoes`
+- Registro de erros e tentativas
+- Rastreabilidade de cada operação
+- Logs em arquivo `/var/log/caminhocerto_sync.log`
+
+#### Tabelas de Controle
+
+```sql
+-- Histórico de todas as sincronizações
+sincronizacoes:
+- id (UUID)
+- tipo (TEXT) - 'venda_linx', 'venda_cc'
+- origem (TEXT) - 'linx', 'caminhocerto'
+- destino (TEXT) - 'caminhocerto', 'linx'
+- dados (JSONB) - Dados sincronizados
+- status (TEXT) - 'processado', 'erro'
+- erro (TEXT) - Mensagem de erro (se houver)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+-- Fila de processamento
+sincronizacao_pendente:
+- id (UUID)
+- tipo (TEXT)
+- dados (JSONB)
+- tentativas (INTEGER) - Número de tentativas
+- proximo_retry (TIMESTAMP) - Quando tentar novamente
+- created_at (TIMESTAMP)
+```
+
+#### Fluxo de Sincronização
+
+**Venda no Caminho Certo:**
+```
+1. Venda registrada no PDV
+2. Salva no Supabase
+3. Sync Server captura
+4. Transforma para formato Linx
+5. Envia para Linx via HTTP
+6. Registra em sincronizacoes
+```
+
+**Venda no Linx:**
+```
+1. Venda no Linx
+2. Linx notifica Sync Server (webhook)
+3. Sync Server valida dados
+4. Cria registro no Supabase
+5. Atualiza estoque
+6. Registra em sincronizacoes
+```
+
+**Tratamento de Erros:**
+```
+1. Tentativa falha
+2. Registra em sincronizacao_pendente
+3. Incrementa contador de tentativas
+4. Agenda próximo retry (exponencial backoff)
+5. Após 5 tentativas, marca como erro permanente
+6. Alerta via WhatsApp para administrador
+```
+
+### 🤖 Evolution API (WhatsApp Business)
+
+Integração com Evolution API para assistente inteligente:
+
+**Características:**
+- API REST para controle de instância WhatsApp
+- Webhook para receber mensagens
+- Envio de mensagens, áudios, imagens e documentos
+- Gestão de grupos e contatos
+- QR Code para autenticação
+
+**Endpoint da Evolution API:**
+```
+Base URL: https://evo.inovapro.cloud
+API Key: BQYHJGJHJ
+Instance: pdv-inovapro
+```
+
+**Principais Recursos:**
+- Envio de mensagens programadas
+- Respostas automáticas baseadas em palavras-chave
+- Integração com IA (ChatGPT, Claude, etc.)
+- Webhooks para eventos de mensagem
+- Status de leitura e presença
+
+### 📲 Bot WhatsApp (whatsapp-web.js)
+
+Integração dedicada para relatórios e notificações:
+
+**Características:**
+- Baseado em whatsapp-web.js (Web WhatsApp)
+- Sessão persistente com autenticação QR Code
+- Suporte a envio de PDFs e imagens
+- Múltiplos destinatários (PV e grupos)
+- Reconexão automática
+
+**Casos de Uso:**
+- Notificações de entrada/saída de ponto
+- Relatórios de fechamento de turno
+- Comprovantes com PDF anexado
+- Alertas de estoque baixo
+- Resumos administrativos
 
 ## 🗄️ Banco de Dados
 
@@ -420,6 +1185,44 @@ Logs de auditoria
 - user_id (uuid, FK)
 - action (text)
 - details (jsonb)
+- created_at (timestamp)
+```
+
+#### active_shifts
+Controle de turnos ativos dos funcionários
+```sql
+- id (uuid, PK)
+- user_id (uuid, FK)
+- user_name (text)
+- start_time (timestamp)
+- end_time (timestamp)
+- whatsapp_number (text)
+- created_at (timestamp)
+- updated_at (timestamp)
+```
+
+#### sincronizacoes
+Histórico de sincronizações com sistemas externos
+```sql
+- id (uuid, PK)
+- tipo (text) -- 'venda_linx', 'venda_cc', 'produto'
+- origem (text) -- 'linx', 'caminhocerto'
+- destino (text) -- 'caminhocerto', 'linx'
+- dados (jsonb)
+- status (text) -- 'processado', 'erro'
+- erro (text)
+- created_at (timestamp)
+- updated_at (timestamp)
+```
+
+#### sincronizacao_pendente
+Fila de sincronizações pendentes
+```sql
+- id (uuid, PK)
+- tipo (text)
+- dados (jsonb)
+- tentativas (integer)
+- proximo_retry (timestamp)
 - created_at (timestamp)
 ```
 
@@ -952,10 +1755,301 @@ Projeto proprietário - Todos os direitos reservados
 
 ---
 
-**🏪 CAMINHO CERTO - Sistema de Gestão Completo**  
-*Sistema moderno e completo para postos de combustível e lojas de conveniência*
+## 🏗️ Arquitetura do Sistema
 
-**Tecnologias:** React 18.3 • TypeScript 5.8 • Vite 5.4 • Supabase 2.76 • Tailwind CSS 3.4  
-**Recursos:** PWA • Mobile App • Scanner Nativo • Cache Offline • Interface Responsiva
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     CAMINHO CERTO - PDV                      │
+│              React + TypeScript + Supabase                   │
+└────────────────────┬─────────────────────────────────────────┘
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│ Bot WhatsApp │ │  Evolution   │ │ Sync Server  │
+│   (Reports)  │ │  API (AI)    │ │   (Linx)     │
+└──────┬───────┘ └──────┬───────┘ └──────┬───────┘
+       │                │                │
+       │                │                │
+       ▼                ▼                ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│ Funcionários │ │   Clientes   │ │ Sistema Linx │
+│ (Notificações│ │  (Consultas) │ │  (POS/ERP)   │
+│   de Ponto)  │ │              │ │              │
+└──────────────┘ └──────────────┘ └──────────────┘
+```
 
-Desenvolvido com ❤️ em 2025 | Powered by INOVAPRO TECHNOLOGY
+### Componentes da Arquitetura
+
+**1. Frontend (Porta 8080)**
+- Interface React responsiva
+- PWA para instalação
+- Scanner de código de barras
+- Cache offline
+
+**2. Bot WhatsApp (Porta 4000)**
+- Envio de relatórios e comprovantes
+- Geração de PDFs profissionais
+- Notificações automáticas
+- Sessão persistente
+
+**3. Evolution API**
+- Assistente inteligente
+- Respostas automáticas
+- Integração com IA
+- Gestão de conversas
+
+**4. Sync Server (Porta 5000)**
+- Sincronização com Linx
+- Fila de processamento
+- Tratamento de erros
+- Logs de auditoria
+
+**5. Supabase**
+- Banco de dados PostgreSQL
+- Storage de arquivos
+- Row Level Security
+- Real-time updates
+
+## 📊 Fluxo Completo de Operação
+
+### Dia Típico de um Funcionário
+
+```
+08:00 → Entrada no Sistema
+        └─→ Registra ponto digital
+            └─→ WhatsApp: Comprovante de entrada
+
+08:05 → Inicia Vendas
+        └─→ Produtos escaneados
+            └─→ Estoque atualizado em tempo real
+                └─→ Sincroniza com Linx
+
+12:00 → Cliente Consulta Preço (WhatsApp)
+        └─→ Evolution API responde automaticamente
+            └─→ "Coca-Cola 2L: R$ 7,50"
+
+17:00 → Finaliza Turno
+        └─→ Sistema calcula horas trabalhadas
+            └─→ Gera relatório de vendas
+                └─→ Cria PDF profissional
+                    └─→ Envia via WhatsApp (Funcionário + Gestão)
+                        └─→ Comprovante de ponto + Resumo de vendas
+```
+
+## 🎯 Diferenciais do Sistema
+
+✅ **Totalmente Automatizado** - Mínima intervenção manual
+✅ **Integração WhatsApp** - Comunicação direta e instantânea
+✅ **PDFs Profissionais** - Documentação empresarial moderna
+✅ **Sincronização Multi-Sistema** - Integração com Linx e outros POS
+✅ **Controle de Ponto Integrado** - Gestão completa de turnos
+✅ **Assistente Inteligente** - Respostas 24/7 no WhatsApp
+✅ **PWA & Mobile** - Funciona em qualquer dispositivo
+✅ **Offline First** - Opera mesmo sem internet
+✅ **Segurança Robusta** - RLS, criptografia e auditoria
+✅ **Escalável** - Suporta múltiplas lojas e funcionários
+
+## 🔧 Manutenção e Monitoramento
+
+### Logs do Sistema
+
+**Frontend:**
+```bash
+# Logs em tempo real
+npm run dev
+```
+
+**Bot WhatsApp:**
+```bash
+# Logs via PM2
+pm2 logs whatsapp-bot
+
+# Logs diretos
+tail -f bot/logs/bot.log
+```
+
+**Sync Server:**
+```bash
+# Logs de sincronização
+tail -f /var/log/caminhocerto_sync.log
+
+# Logs via PM2
+pm2 logs sync-server
+```
+
+### Verificação de Saúde
+
+```bash
+# Verificar frontend
+curl http://localhost:8080
+
+# Verificar bot WhatsApp
+curl http://localhost:4000/status
+
+# Verificar sync server
+curl http://localhost:5000/health
+
+# Verificar grupos WhatsApp
+curl http://localhost:4000/groups
+
+# Ver processos PM2
+pm2 status
+```
+
+### Backup e Restauração
+
+```bash
+# Backup do Supabase (via CLI)
+supabase db dump -f backup.sql
+
+# Backup da sessão do WhatsApp
+tar -czf whatsapp-session.tar.gz bot/.wwebjs_auth/
+
+# Restaurar sessão
+tar -xzf whatsapp-session.tar.gz -C bot/
+```
+
+## 🔍 Troubleshooting - Problemas com WhatsApp
+
+### Notificações de Ponto não Estão Sendo Enviadas
+
+Se as notificações de ponto (entrada/saída) não estiverem sendo enviadas via WhatsApp, siga estes passos:
+
+#### 1. Verificar Status do Bot
+
+```bash
+# Verificar se o bot está rodando
+pm2 status
+
+# Verificar se o bot está conectado ao WhatsApp
+curl http://localhost:4000/status
+
+# Ver logs do bot em tempo real
+pm2 logs caminho-bot --lines 50
+```
+
+#### 2. Diagnóstico Comum
+
+**Bot não conectado:**
+```bash
+# Logs mostram: "❌ Bot não conectado - rejeitando requisição"
+# Solução: Reiniciar o bot
+pm2 restart caminho-bot
+
+# Aguardar 30 segundos e verificar novamente
+curl http://localhost:4000/status
+```
+
+**Bot precisa escanear QR Code:**
+```bash
+# Ver QR Code nos logs
+pm2 logs caminho-bot
+
+# Escaneie o QR Code com seu WhatsApp
+# Aguarde a mensagem: "✅ Bot do Caminho Certo conectado ao WhatsApp!"
+```
+
+**Número de WhatsApp não cadastrado:**
+```bash
+# Verificar se o usuário tem número cadastrado no sistema
+# Acesse o perfil do funcionário no sistema e adicione o número
+# Formato: 5511999999999 (código do país + DDD + número)
+```
+
+#### 3. Teste Manual de Notificação
+
+```bash
+# Testar envio de notificação manualmente
+node test-ponto-notification.js
+
+# Ou usar curl:
+curl -X POST http://localhost:4000/send-clock-notification \
+  -H "Content-Type: application/json" \
+  -d '{
+    "whatsapp_number": "5511999999999",
+    "user_name": "Teste",
+    "clock_time": "31/10/2025 às 08:00:00",
+    "type": "entrada"
+  }'
+```
+
+#### 4. Verificar Conexão Evolution API
+
+Para relatórios automáticos (diferentes das notificações de ponto):
+
+```bash
+# Verificar status do auto-responder
+pm2 logs auto-responder-evolution --lines 50
+
+# Verificar se Evolution API está rodando
+curl http://localhost:8085/manager/status
+```
+
+### Diferença entre os Bots
+
+O sistema tem **2 bots diferentes**:
+
+1. **caminho-bot** (whatsapp-web.js) - Porta 4000
+   - Envia notificações de ponto (entrada/saída)
+   - Envia relatórios de fechamento de turno
+   - Usa sessão persistente local
+
+2. **auto-responder-evolution** (Evolution API) - Porta 8085
+   - Envia relatórios automáticos de hora em hora
+   - Sistema de auto-resposta para clientes
+   - Usa Evolution API
+
+### Comandos Úteis de Manutenção
+
+```bash
+# Reiniciar todos os bots
+pm2 restart all
+
+# Ver todos os logs em tempo real
+pm2 logs
+
+# Limpar sessão do WhatsApp (se precisar reconectar)
+rm -rf bot/.wwebjs_auth/
+pm2 restart caminho-bot
+
+# Monitorar recursos
+pm2 monit
+```
+
+## 🚀 Roadmap Futuro
+
+- [ ] Integração com ChatGPT/Claude para respostas mais inteligentes
+- [ ] Dashboard analytics em tempo real
+- [ ] Aplicativo mobile nativo (iOS/Android)
+- [ ] Integração com maquininhas de cartão
+- [ ] Sistema de fidelidade de clientes
+- [ ] Vendas online via WhatsApp
+- [ ] Reconhecimento facial para ponto
+- [ ] Previsão de demanda com IA
+- [ ] Multi-loja centralizado
+- [ ] API pública para integrações
+
+## 📞 Suporte
+
+**Desenvolvido por:** INOVAPRO TECHNOLOGY
+**Email:** contato@inovapro.cloud
+**Documentação:** Este README
+**Versão:** 1.0.0
+
+---
+
+**🏪 CAMINHO CERTO - Sistema de Gestão Inteligente**
+*Sistema completo e automatizado para postos de combustível e lojas de conveniência*
+
+**Stack Principal:**
+React 18.3 • TypeScript 5.8 • Vite 5.4 • Supabase 2.76 • Tailwind CSS 3.4
+
+**Integrações:**
+WhatsApp Web.js • Evolution API • Puppeteer • Sistema Linx
+
+**Recursos:**
+PWA • Mobile App • Scanner Nativo • Cache Offline • Automação WhatsApp • Sync Multi-Sistema • Controle de Ponto Digital
+
+Desenvolvido com ❤️ em 2025 | Powered by **INOVAPRO TECHNOLOGY**
