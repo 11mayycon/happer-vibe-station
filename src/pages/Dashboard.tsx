@@ -242,16 +242,16 @@ export default function Dashboard() {
               return (
                 <Card
                   key={card.path}
-                  className="group cursor-pointer overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-card/95 backdrop-blur-md border-2"
+                  className="group cursor-pointer overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-blue-900/95 backdrop-blur-md border-2 border-blue-700"
                   onClick={() => navigate(card.path)}
                 >
-                  <div className={`h-2 bg-gradient-to-r ${card.color}`} />
+                  <div className={`h-2 bg-gradient-to-r ${card.color.replace('from-primary', 'from-green-500').replace('to-primary-hover', 'to-green-600').replace('from-blue-500', 'from-green-500').replace('to-blue-600', 'to-green-600')}`} />
                   <div className="p-6">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color.replace('from-primary', 'from-green-500').replace('to-primary-hover', 'to-green-600').replace('from-blue-500', 'from-green-500').replace('to-blue-600', 'to-green-600')} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-[22px] font-bold mb-2 text-black dark:text-white">{card.title}</h3>
-                    <p className="text-muted-foreground">{card.description}</p>
+                    <h3 className="text-[22px] font-bold mb-2 text-white">{card.title}</h3>
+                    <p className="text-gray-200">{card.description}</p>
                   </div>
                 </Card>
               );
