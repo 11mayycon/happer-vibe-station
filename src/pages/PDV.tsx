@@ -592,27 +592,27 @@ export default function PDV() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Valor Total Vendido - Clicável - sempre visível */}
-            <div
-              className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-green-500/30 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={handleTotalVendasClick}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Total Vendido</span>
-                <DollarSign className="w-5 h-5 text-green-600" />
-              </div>
-              <p className="text-3xl font-bold text-green-600">
-                R$ {shiftSummary.total.toFixed(2)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                <FileText className="w-3 h-3" />
-                Clique para ver itens vendidos
-              </p>
-            </div>
-
-            {/* Quando carrinho está vazio: mostra Vendas Realizadas e Total da Venda */}
+            {/* Quando carrinho está vazio: mostra os 3 cards */}
             {cart.length === 0 && (
               <>
+                {/* Valor Total Vendido - Clicável */}
+                <div
+                  className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-green-500/30 cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={handleTotalVendasClick}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Total Vendido</span>
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                  </div>
+                  <p className="text-3xl font-bold text-green-600">
+                    R$ {shiftSummary.total.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    Clique para ver itens vendidos
+                  </p>
+                </div>
+
                 {/* Número de Vendas */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-blue-500/30">
                   <div className="flex items-center justify-between mb-2">
@@ -637,14 +637,14 @@ export default function PDV() {
               </>
             )}
 
-            {/* Quando carrinho tem produtos: Total da Venda vai para posição central */}
+            {/* Quando carrinho tem produtos: apenas Total da Venda expandido */}
             {cart.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-purple-500/30">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Total da Venda</span>
-                  <DollarSign className="w-5 h-5 text-purple-600" />
+              <div className="md:col-span-3 bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-purple-500/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg text-muted-foreground">Total da Venda</span>
+                  <DollarSign className="w-6 h-6 text-purple-600" />
                 </div>
-                <p className="text-3xl font-bold text-purple-600">
+                <p className="text-5xl font-bold text-purple-600 mt-2">
                   R$ {calculateTotal().toFixed(2)}
                 </p>
               </div>
@@ -740,7 +740,16 @@ export default function PDV() {
             </div>
           ) : (
             <>
-              <div className="space-y-3 max-h-96 overflow-y-auto mb-4">
+              {/* Botão Finalizar Venda acima do carrinho */}
+              <Button
+                className="w-full bg-gradient-to-r from-success to-green-600 mb-4"
+                onClick={() => setShowCheckout(true)}
+              >
+                <DollarSign className="w-4 h-4 mr-2" />
+                Finalizar Venda
+              </Button>
+
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {cart.map((item) => (
                   <Card key={item.id} className="p-3">
                     <div className="flex justify-between items-start mb-2">
@@ -783,20 +792,6 @@ export default function PDV() {
                     </div>
                   </Card>
                 ))}
-              </div>
-
-              <div className="border-t pt-4 space-y-4">
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total:</span>
-                  <span className="text-primary">R$ {calculateTotal().toFixed(2)}</span>
-                </div>
-                <Button
-                  className="w-full bg-gradient-to-r from-success to-green-600"
-                  onClick={() => setShowCheckout(true)}
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Finalizar Venda
-                </Button>
               </div>
             </>
           )}
