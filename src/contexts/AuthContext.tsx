@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: 'Credenciais inválidas' };
       }
 
-      const userData = users[0];
+      const userData = users[0] as any;
 
       // Importar bcrypt dinamicamente para validar a senha
       const bcrypt = await import('bcryptjs');
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: userData.id,
         name: userData.name,
         email: userData.email,
-        whatsapp_number: userData.whatsapp_number,
+        whatsapp_number: userData.whatsapp_number || '',
         role: userData.role,
         cargo: userData.cargo,
       };

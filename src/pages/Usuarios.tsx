@@ -59,7 +59,7 @@ export default function Usuarios() {
         .order('name');
       
       if (error) throw error;
-      setUsers(data || []);
+      setUsers((data as any) || []);
     } catch (error) {
       console.error('Error loading users:', error);
     }

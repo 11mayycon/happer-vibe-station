@@ -85,8 +85,8 @@ export default function ControlePonto() {
         .order('entrada', { ascending: false });
 
       if (error) throw error;
-      setPontos(data || []);
-      setFilteredPontos(data || []);
+      setPontos((data as any) || []);
+      setFilteredPontos((data as any) || []);
     } catch (error) {
       console.error('Error loading pontos:', error);
       toast({

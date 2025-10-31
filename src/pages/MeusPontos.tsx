@@ -49,7 +49,7 @@ export default function MeusPontos() {
         .order('entrada', { ascending: false });
 
       if (error) throw error;
-      setPontos(data || []);
+      setPontos((data as any) || []);
     } catch (error) {
       console.error('Error loading pontos:', error);
       toast({

@@ -79,17 +79,16 @@ export default function Produtos() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('categoria, subcategoria')
-        .not('categoria', 'is', null);
+        .select('categoria, subcategoria') as any;
 
       if (error) throw error;
 
       // Extrair categorias únicas e ordenar
-      const categoriasUnicas = [...new Set(data?.map(p => p.categoria).filter(Boolean))] as string[];
+      const categoriasUnicas = [...new Set(data?.map((p: any) => p.categoria).filter(Boolean))] as string[];
       setCategorias(categoriasUnicas.sort());
 
       // Extrair subcategorias únicas e ordenar
-      const subcategoriasUnicas = [...new Set(data?.map(p => p.subcategoria).filter(Boolean))] as string[];
+      const subcategoriasUnicas = [...new Set(data?.map((p: any) => p.subcategoria).filter(Boolean))] as string[];
       setSubcategorias(subcategoriasUnicas.sort());
     } catch (error) {
       console.error('Error loading categorias:', error);
