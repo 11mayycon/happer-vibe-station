@@ -83,6 +83,36 @@ All colors MUST be HSL.
   }
 }
 
+/* Neon and Animation Styles */
+.neon-title {
+  color: #fff;
+  text-shadow: 
+    0 0 5px rgba(59, 130, 246, 0.5),
+    0 0 10px rgba(59, 130, 246, 0.3),
+    0 0 15px rgba(59, 130, 246, 0.2);
+}
+
+.neon-text {
+  color: #e0f2fe;
+  text-shadow: 
+    0 0 3px rgba(59, 130, 246, 0.4),
+    0 0 6px rgba(59, 130, 246, 0.2);
+}
+
+@keyframes letterBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.letter-bounce {
+  animation: letterBounce 3s ease-in-out infinite;
+  display: inline-block;
+}
+
 /* Barcode Scanner Styles */
 body.barcode-scanner-active {
   background: transparent !important;
