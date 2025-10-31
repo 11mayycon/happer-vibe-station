@@ -6,47 +6,69 @@ interface AnimatedUsernameProps {
 }
 
 export function AnimatedUsername({ name }: AnimatedUsernameProps) {
+  const welcomeText = "BEM VINDO(A)";
   const upperName = name.toUpperCase();
-  const [displayText, setDisplayText] = useState(upperName);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [displayText, setDisplayText] = useState("");
+  const [isTyping, setIsTyping] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const randomIndex = Math.floor(Math.random() * upperName.length);
-      setActiveIndex(randomIndex);
+    let currentIndex = 0;
+    let isDeleting = false;
+    
+    const typeInterval = setInterval(() => {
+      if (showWelcome) {
+        // Typing welcome message
+        if (!isDeleting && currentIndex < welcomeText.length) {
+          setDisplayText(welcomeText.slice(0, currentIndex + 1));
+          currentIndex++;
+        } 
+        // Finished typing, wait then start deleting
+        else if (!isDeleting && currentIndex === welcomeText.length) {
+          setTimeout(() => {
+            isDeleting = true;
+          }, 1500);
+        }
+        // Deleting welcome message
+        else if (isDeleting && currentIndex > 0) {
+          currentIndex--;
+          setDisplayText(welcomeText.slice(0, currentIndex));
+        }
+        // Finished deleting, switch to name
+        else if (isDeleting && currentIndex === 0) {
+          setShowWelcome(false);
+          setIsTyping(true);
+        }
+      } else {
+        // Typing user name
+        if (currentIndex < upperName.length) {
+          setDisplayText(upperName.slice(0, currentIndex + 1));
+          currentIndex++;
+        } else {
+          setIsTyping(false);
+        }
+      }
+    }, showWelcome && isDeleting ? 50 : 100);
 
-      // Temporarily replace with random letter
-      const randomChar = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-      const newText = upperName.split('').map((char, i) => 
-        i === randomIndex ? randomChar : char
-      ).join('');
-      setDisplayText(newText);
-
-      // Restore original letter after delay
-      setTimeout(() => {
-        setDisplayText(upperName);
-        setActiveIndex(-1);
-      }, 200);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [upperName]);
+    return () => clearInterval(typeInterval);
+  }, [showWelcome, upperName]);
 
   return (
     <div className="flex items-center gap-2">
-      <User className="w-4 h-4 text-blue-300 animate-bounce" />
+      <User className="w-4 h-4 text-primary animate-pulse" />
       <span className="font-medium text-sm neon-text">
         {displayText.split('').map((char, i) => (
           <span
             key={i}
-            className={`inline-block letter-bounce ${i === activeIndex ? 'text-accent' : ''}`}
+            className="inline-block letter-jump"
             style={{
-              animationDelay: `${i * 0.1}s`
+              animationDelay: `${i * 0.05}s`
             }}
           >
             {char}
           </span>
         ))}
+        {isTyping && <span className="inline-block w-0.5 h-4 bg-accent ml-1 animate-pulse" />}
       </span>
     </div>
   );
