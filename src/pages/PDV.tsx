@@ -594,11 +594,11 @@ export default function PDV() {
       </video>
       
       {/* Overlay escuro */}
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm -z-10"></div>
+      <div className="fixed inset-0 bg-black/30 -z-10"></div>
 
       <Layout title="PDV - Ponto de Venda" showBack>
         {/* Card de Resumo de Vendas do Turno */}
-        <Card className="mb-6 bg-blue-900/95 backdrop-blur-md border-2 border-blue-700">
+        <Card className="mb-6 bg-blue-900/70 backdrop-blur-md border-2 border-blue-700">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 shadow-lg">
@@ -613,7 +613,7 @@ export default function PDV() {
               <>
                 {/* Valor Total Vendido - Clicável */}
                 <div
-                  className="bg-blue-900/95 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 cursor-pointer hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                  className="bg-blue-900/60 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 cursor-pointer hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                   onClick={handleTotalVendasClick}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -630,7 +630,7 @@ export default function PDV() {
                 </div>
 
                 {/* Número de Vendas */}
-                <div className="bg-blue-900/95 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                <div className="bg-blue-900/60 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-bold text-black">Vendas Realizadas</span>
                     <ShoppingCart className="w-5 h-5 text-white" />
@@ -641,7 +641,7 @@ export default function PDV() {
                 </div>
 
                 {/* Total da Venda Atual */}
-                <div className="bg-blue-900/95 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                <div className="bg-blue-900/60 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-bold text-black">Total da Venda</span>
                     <DollarSign className="w-5 h-5 text-white" />
@@ -655,7 +655,7 @@ export default function PDV() {
 
             {/* Quando carrinho tem produtos: apenas Total da Venda expandido */}
             {cart.length > 0 && (
-              <div className="md:col-span-3 bg-blue-900/95 backdrop-blur-md border-2 border-blue-700 rounded-lg p-6 hover:shadow-2xl transition-all duration-300">
+              <div className="md:col-span-3 bg-blue-900/60 backdrop-blur-md border-2 border-blue-700 rounded-lg p-6 hover:shadow-2xl transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-black">Total da Venda</span>
                   <DollarSign className="w-6 h-6 text-white" />
@@ -683,7 +683,7 @@ export default function PDV() {
       )}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Busca de Produtos */}
-        <Card className="p-6">
+        <Card className="p-6 bg-background/80 backdrop-blur-md">
           <h2 className="text-xl font-semibold mb-4">Buscar Produto</h2>
           <div className="flex gap-2 mb-4">
             <div className="relative flex-1">
@@ -732,7 +732,7 @@ export default function PDV() {
         </Card>
 
         {/* Carrinho */}
-        <Card className="p-6">
+        <Card className="p-6 bg-background/80 backdrop-blur-md">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
