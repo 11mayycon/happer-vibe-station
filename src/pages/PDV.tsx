@@ -592,9 +592,16 @@ export default function PDV() {
       }}
     >
       {/* Overlay escuro */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm -z-10"></div>
+      <div className="fixed inset-0 bg-black/50 -z-10"></div>
 
-      <Layout title="PDV - Ponto de Venda" showBack>
+      <style>{`
+        .pdv-page .min-h-screen {
+          background: transparent !important;
+        }
+      `}</style>
+
+      <div className="relative z-0 pdv-page">
+        <Layout title="PDV - Ponto de Venda" showBack>
         {/* Card de Resumo de Vendas do Turno */}
         <Card className="mb-6 bg-blue-900/70 backdrop-blur-md border-2 border-blue-700">
         <div className="p-6">
@@ -1008,7 +1015,8 @@ export default function PDV() {
         onClose={() => setShowScanner(false)}
         onScan={handleBarcodeScan}
       />
-    </Layout>
+      </Layout>
+      </div>
     </div>
   );
 }
