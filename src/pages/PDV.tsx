@@ -14,6 +14,7 @@ import { Search, Plus, Minus, Trash2, ShoppingCart, DollarSign, Printer, Clock, 
 import { useNavigate } from 'react-router-dom';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { startOfDay, endOfDay } from 'date-fns';
+import pdvBgVideo from '@/assets/pdv-bg.mp4';
 
 interface Product {
   id: string;
@@ -580,15 +581,30 @@ export default function PDV() {
   };
 
   return (
-    <Layout title="PDV - Ponto de Venda" showBack>
-      {/* Card de Resumo de Vendas do Turno */}
-      <Card className="mb-6 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 border-blue-500/20">
+    <div className="relative min-h-screen">
+      {/* Vídeo de fundo */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover -z-10"
+      >
+        <source src={pdvBgVideo} type="video/mp4" />
+      </video>
+      
+      {/* Overlay escuro */}
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm -z-10"></div>
+
+      <Layout title="PDV - Ponto de Venda" showBack>
+        {/* Card de Resumo de Vendas do Turno */}
+        <Card className="mb-6 bg-blue-900/95 backdrop-blur-md border-2 border-blue-700">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg p-3">
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 shadow-lg">
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-xl font-bold">📈 Resumo de Vendas do Turno</h3>
+            <h3 className="text-xl font-bold text-white">📈 Resumo de Vendas do Turno</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -597,40 +613,40 @@ export default function PDV() {
               <>
                 {/* Valor Total Vendido - Clicável */}
                 <div
-                  className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-green-500/30 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-blue-900/95 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 cursor-pointer hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                   onClick={handleTotalVendasClick}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Total Vendido</span>
-                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <span className="text-sm font-bold text-black">Total Vendido</span>
+                    <DollarSign className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-3xl font-bold text-green-600">
+                  <p className="text-3xl font-bold text-white">
                     R$ {shiftSummary.total.toFixed(2)}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                  <p className="text-xs text-gray-200 mt-2 flex items-center gap-1">
                     <FileText className="w-3 h-3" />
                     Clique para ver itens vendidos
                   </p>
                 </div>
 
                 {/* Número de Vendas */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-blue-500/30">
+                <div className="bg-blue-900/95 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Vendas Realizadas</span>
-                    <ShoppingCart className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-bold text-black">Vendas Realizadas</span>
+                    <ShoppingCart className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-3xl font-bold text-blue-600">
+                  <p className="text-3xl font-bold text-white">
                     {shiftSummary.count}
                   </p>
                 </div>
 
                 {/* Total da Venda Atual */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border-2 border-purple-500/30">
+                <div className="bg-blue-900/95 backdrop-blur-md border-2 border-blue-700 rounded-lg p-4 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Total da Venda</span>
-                    <DollarSign className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm font-bold text-black">Total da Venda</span>
+                    <DollarSign className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-3xl font-bold text-purple-600">
+                  <p className="text-3xl font-bold text-white">
                     R$ {calculateTotal().toFixed(2)}
                   </p>
                 </div>
@@ -639,12 +655,12 @@ export default function PDV() {
 
             {/* Quando carrinho tem produtos: apenas Total da Venda expandido */}
             {cart.length > 0 && (
-              <div className="md:col-span-3 bg-white dark:bg-gray-800 rounded-lg p-6 border-2 border-purple-500/30">
+              <div className="md:col-span-3 bg-blue-900/95 backdrop-blur-md border-2 border-blue-700 rounded-lg p-6 hover:shadow-2xl transition-all duration-300">
                 <div className="flex items-center justify-between">
-                  <span className="text-lg text-muted-foreground">Total da Venda</span>
-                  <DollarSign className="w-6 h-6 text-purple-600" />
+                  <span className="text-lg font-bold text-black">Total da Venda</span>
+                  <DollarSign className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-5xl font-bold text-purple-600 mt-2">
+                <p className="text-5xl font-bold text-white mt-2">
                   R$ {calculateTotal().toFixed(2)}
                 </p>
               </div>
@@ -988,6 +1004,13 @@ export default function PDV() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BarcodeScanner
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={handleBarcodeScan}
+      />
     </Layout>
+    </div>
   );
 }
